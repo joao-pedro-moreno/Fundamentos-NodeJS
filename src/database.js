@@ -1,11 +1,13 @@
 import fs from "node:fs/promises"
 
+const databasePath = new URL("db.json", import.meta.url)
+
 export class Database {
   // # Deixa a propriedade privada
   #database = {}
 
   #persist() {
-    fs.writeFile("db.json", JSON.stringify(this.#database))
+    fs.writeFile(databasePath, JSON.stringify(this.#database))
   }
 
   select(table) {
