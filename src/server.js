@@ -1,7 +1,6 @@
 import http from "node:http"
-import { randomUUID } from "node:crypto"
 import { json } from "./middlewares/json.js"
-import { Database } from "./database.js"
+import { routes } from "./routes.js"
 
 // - HTTP
 //  - Método HTTP
@@ -15,7 +14,7 @@ import { Database } from "./database.js"
 // PATCH => Atualizar uma informação específica de um recurso no Back-end 
 // DELETE => Deleta um recurso no Back-end
 
-// GET => /users => Buscando usuários no Back-end
+// GET => /users -> Buscando usuários no Back-end
 // POST => Criar um usuário no Back-end
 
 // Stateful - Stateless
@@ -23,7 +22,7 @@ import { Database } from "./database.js"
 // Stateful => Aplicação que salva os dados localmente na memória
 // Stateless => Aplicação que utiliza de meios externos para salvar os dados
 
-// JSON - JavaScrip Object Notation
+// JSON => JavaScrip Object Notation
 
 // Headers (Requisição/Resposta) => Metadados
 
@@ -31,32 +30,36 @@ import { Database } from "./database.js"
 
 // UUID => Universal Unique ID
 
-const database = new Database()
+// Formas de receber informações das aplicações
+// - Query Parameters => URL Stateful -> Filtros, paginação, não-obrigatórios
+//    Ex: http://localhost:3333/users/userId=1&name=Joao
+// 
+// - Route Parameters => Identificação de recurso
+//    Ex: http://localhost:3333/users/1
+// 
+// - Request Body => Envio de informações de um formulário
+// 
+// Query e Route parameters devem ser usados apenas para dados não sensíveis
+
+
 
 const server = http.createServer(async (req, res) => {
   const { method, url } = req
 
   await json(req, res)
 
-  if (method === "GET" && url === "/users") {
-    const users = database.select("users")
+  const route = routes.find((route) => {
+    return route.method === method && route.path.test(url)
+  })
 
-    // Early return (Caso o código execute o "return", nenhum código abaixo é executado)
-    return res.end(JSON.stringify(users))
-  }
+  if (route) {
+    const routeParams = req.url.match(route.path)
 
-  if (method === "POST" && url === "/users") {
-    const { name, email } = req.body
+    req.params = { ...routeParams.groups }
 
-    const user = {
-      id: randomUUID(),
-      name,
-      email,
-    }
+    console.log(req.params)
 
-    database.insert("users", user)
-
-    return res.writeHead(201).end()
+    return route.handler(req, res)
   }
 
   return res.writeHead(404).end()
