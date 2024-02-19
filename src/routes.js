@@ -10,7 +10,12 @@ export const routes = [
     method: "GET",
     path: buildRoutePath("/users"),
     handler: (req, res) => {
-      const users = database.select("users")
+      const { search } = req.query
+
+      const users = database.select("users", search ? {
+        name: search,
+        email: search
+      } : null)
 
       // Early return (Caso o código execute o "return", nenhum código abaixo é executado)
       return res.end(JSON.stringify(users))
